@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}个人资料{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> 个人资料</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr><th width="120">用户名</th><td>{{ current_user.username }}</td></tr>
+                    <tr><th>角色</th><td>{{ '家主' if current_user.role == 'homeowner' else '成员' }}</td></tr>
+                    <tr><th>手机号</th><td>{{ current_user.phone or '未设置' }}</td></tr>
+                    <tr><th>邮箱</th><td>{{ current_user.email or '未设置' }}</td></tr>
+                    <tr><th>注册时间</th><td>{{ current_user.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-key"></i> 修改密码</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">当前密码</label>
+                        {{ form.old_password(class="form-control") }}
+                        {% for error in form.old_password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">新密码</label>
+                        {{ form.new_password(class="form-control") }}
+                        {% for error in form.new_password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">确认新密码</label>
+                        {{ form.confirm_password(class="form-control") }}
+                        {% for error in form.confirm_password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {{ form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

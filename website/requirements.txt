@@ -1,0 +1,16 @@
+Flask>=3.0
+Flask-SQLAlchemy>=3.1
+Flask-Login>=0.6
+Flask-WTF>=1.2
+Flask-SocketIO>=5.3
+WTForms>=3.1
+email-validator>=2.0
+paho-mqtt>=1.6
+requests>=2.31
+python-dotenv>=1.0
+
+# 摄像头支持 (二选一)
+# Windows/macOS 开发环境用 opencv-python
+opencv-python>=4.8
+# Linux 无头服务器用 opencv-python-headless (取消注释下面一行，注释上面一行)
+# opencv-python-headless>=4.8

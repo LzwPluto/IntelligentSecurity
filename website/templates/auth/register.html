@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}注册{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4">
+                    <i class="bi bi-house-door"></i> 智能家居系统
+                </h3>
+                <h5 class="text-center text-muted mb-4">注册家主账号</h5>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        {{ form.username(class="form-control", placeholder="3-80个字符") }}
+                        {% for error in form.username.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        {{ form.password(class="form-control", placeholder="至少6个字符") }}
+                        {% for error in form.password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">确认密码</label>
+                        {{ form.confirm_password(class="form-control", placeholder="再次输入密码") }}
+                        {% for error in form.confirm_password.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">手机号 <small class="text-muted">(可选)</small></label>
+                        {{ form.phone(class="form-control", placeholder="请输入手机号") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱 <small class="text-muted">(可选)</small></label>
+                        {{ form.email(class="form-control", placeholder="请输入邮箱") }}
+                        {% for error in form.email.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-success btn-lg") }}
+                    </div>
+                </form>
+
+                <div class="text-center mt-3">
+                    <span class="text-muted">已有账号？</span>
+                    <a href="{{ url_for('auth.login') }}">去登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

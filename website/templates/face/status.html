@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}人脸识别{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4><i class="bi bi-person-bounding-box"></i> 人脸识别</h4>
+        {% if current_user.role == 'homeowner' %}
+        <a href="{{ url_for('face.enroll') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-person-plus"></i> 录入新人脸
+        </a>
+        {% endif %}
+    </div>
+    <hr>
+</div>
+
+<!-- 服务状态 -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6>服务状态</h6>
+                <span class="badge" id="service-badge">检测中...</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6>已录入</h6>
+                <span class="fs-4" id="known-count">-</span> 人
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h6>最近识别</h6>
+                <span id="last-result">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 实时识别结果 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">实时识别</div>
+            <div class="card-body" id="live-result" style="min-height:80px;">
+                <p class="text-muted">等待识别结果...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 已录入人脸列表（含家人关系） -->
+{% if current_user.role == 'homeowner' %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">已录入人脸</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>姓名</th><th>关系</th><th>录入时间</th><th>操作</th></tr></thead>
+                    <tbody id="members-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- 识别日志 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">识别日志</div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead><tr><th>时间</th><th>识别结果</th><th>距离</th></tr></thead>
+                    <tbody id="log-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const socket = io();
+
+socket.on('face_update', function(data) {
+    var color = data.is_stranger ? 'danger' : 'success';
+    document.getElementById('live-result').innerHTML =
+        '<div class="alert alert-' + color + ' mb-0">' +
+        '<strong>' + data.name + '</strong> &nbsp; 距离: ' + data.distance +
+        ' &nbsp; ' + data.timestamp + '</div>';
+    var tbody = document.getElementById('log-table');
+    var row = tbody.insertRow(0);
+    row.innerHTML = '<td>' + data.timestamp + '</td><td><span class="badge bg-' +
+        color + '">' + data.name + '</span></td><td>' + data.distance + '</td>';
+    while (tbody.rows.length > 50) tbody.deleteRow(-1);
+});
+
+fetch('/face/api/status').then(function(r){return r.json()}).then(function(d){
+    var b = document.getElementById('service-badge');
+    b.textContent = d.running ? '运行中' : '已停止';
+    b.className = 'badge bg-' + (d.running ? 'success' : 'secondary');
+    document.getElementById('known-count').textContent = d.known_count;
+    if (d.last_result) document.getElementById('last-result').textContent = d.last_result.name;
+});
+
+fetch('/face/api/logs?per_page=20').then(function(r){return r.json()}).then(function(d){
+    d.logs.forEach(function(log){
+        var c = log.is_stranger ? 'danger' : 'success';
+        var row = document.getElementById('log-table').insertRow();
+        row.innerHTML = '<td>' + log.timestamp + '</td><td><span class="badge bg-' +
+            c + '">' + (log.name||'陌生人') + '</span></td><td>' +
+            (log.distance ? log.distance.toFixed(4) : '-') + '</td>';
+    });
+});
+
+{% if current_user.role == 'homeowner' %}
+fetch('/face/members').then(function(r){return r.json()}).then(function(d){
+    d.members.forEach(function(m){
+        var row = document.getElementById('members-table').insertRow();
+        row.innerHTML = '<td>' + m.name + '</td><td>' + (m.relationship || '-') +
+            '</td><td>' + m.created_at + '</td><td><button class="btn btn-outline-danger btn-sm" ' +
+            'onclick="deleteFace(' + m.id + ',this)">删除</button></td>';
+    });
+});
+function deleteFace(id, btn) {
+    if (!confirm('确认删除？')) return;
+    fetch('/face/delete/' + id, {method:'POST'}).then(function(r){return r.json()}).then(function(){btn.closest('tr').remove()});
+}
+{% endif %}
+</script>
+{% endblock %}

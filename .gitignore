@@ -1,0 +1,106 @@
+# ============================================================
+# 模型文件 — 体积大，单独管理
+# ============================================================
+# ASR 模型
+smart_assistant/voice/asr/sense-voice-encoder.rknn
+smart_assistant/voice/asr/fsmnvad-offline.onnx
+smart_assistant/voice/asr/embedding.npy
+smart_assistant/voice/asr/chn_jpn_yue_eng_ko_spectok.bpe.model
+
+# TTS 模型
+smart_assistant/TTS/encoder-en.onnx
+smart_assistant/TTS/encoder.onnx
+smart_assistant/TTS/decoder-en-3588.rknn
+smart_assistant/TTS/decoder_rk3588.rknn
+
+# 人脸模型
+website/models/RetinaFace.rknn
+website/models/MobileFaceNet_fp16.rknn
+
+# 唤醒词模型
+smart_assistant/weakup/*.onnx
+smart_assistant/weakup/*.rknn
+smart_assistant/voice/encoder.rknn
+smart_assistant/voice/decoder.rknn
+smart_assistant/voice/joiner.rknn
+smart_assistant/voice/encoder-epoch-*.onnx
+smart_assistant/voice/decoder-epoch-*.onnx
+smart_assistant/voice/joiner-epoch-*.onnx
+
+# 唤醒词配置（保留 tokens.txt / keywords.txt / keywords_raw.txt / configuration.json）
+smart_assistant/weakup/encoder-epoch-*.onnx
+smart_assistant/weakup/decoder-epoch-*.onnx
+smart_assistant/weakup/joiner-epoch-*.onnx
+
+# ============================================================
+# 音频 / 录音 — 测试产物
+# ============================================================
+smart_assistant/voice/asr/output*.wav
+smart_assistant/voice/asr/output_mono16k.wav
+smart_assistant/voice/recordings/*.wav
+smart_assistant/voice/test_keyword.wav
+smart_assistant/voice/recorder/test_output*.wav
+
+# ============================================================
+# 音乐文件（大小 ~20MB，自行准备）
+# ============================================================
+smart_assistant/Music/*.mp3
+smart_assistant/Music/*.mp4
+smart_assistant/Music/*.flac
+
+# ============================================================
+# 编译产物 / 构建目录
+# ============================================================
+smart_assistant/TTS/paroli-on-orangepi/build/
+smart_assistant/TTS/paroli-on-orangepi/libopusenc-0.2.1/
+smart_assistant/TTS/paroli-on-orangepi/piper/utf8/
+smart_assistant/TTS/paroli-on-orangepi/.git/
+
+# 传感器 C 代码编译产物
+传感器代码/*.o
+传感器代码/sensor_app
+sensor_app
+
+# ============================================================
+# Python 缓存
+# ============================================================
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ============================================================
+# 编辑器 / 系统
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# NPY 临时数据
+# ============================================================
+smart_assistant/input_content.npy
+smart_assistant/voice/input_content.npy
+
+# ============================================================
+# Web 调试照片
+# ============================================================
+website/picture/align_*.jpg
+
+# ============================================================
+# 本地数据库（开发时自动生成）
+# ============================================================
+website/data/iot.db
+website/data/iot.db-journal
+
+# ============================================================
+# 备份文件
+# ============================================================
+*.bak
+*.orig

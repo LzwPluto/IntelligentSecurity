@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}人脸录入{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4><i class="bi bi-person-plus"></i> 人脸录入</h4>
+        <hr>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-6 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">选择家人</label>
+                    <select class="form-select" id="enroll-member">
+                        <option value="" disabled selected>请选择要录入人脸的家人</option>
+                        {% for m in family_members %}
+                        <option value="{{ m.id }}">{{ m.name }}（{{ m.relationship or '未填关系' }}）</option>
+                        {% endfor %}
+                    </select>
+                    {% if not family_members %}
+                    <div class="form-text text-danger">
+                        暂无家人信息，请先去 <a href="{{ url_for('family.add_member') }}">家人管理</a> 添加家人
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3 text-center">
+                    <img id="camera-preview" src="{{ url_for('camera.video_feed') }}"
+                         class="img-fluid rounded" style="max-height:360px;"
+                         alt="摄像头预览">
+                </div>
+
+                <div class="progress mb-3" style="display:none;" id="progress-bar">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                         id="progress-value" style="width:0%">采集中...</div>
+                </div>
+
+                <div id="enroll-message"></div>
+
+                <div class="d-grid">
+                    <button class="btn btn-primary" id="btn-enroll" onclick="startEnroll()"
+                            {% if not family_members %}disabled{% endif %}>
+                        <i class="bi bi-camera"></i> 开始录入
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function startEnroll() {
+    const memberId = document.getElementById('enroll-member').value;
+    if (!memberId) { alert('请选择家人'); return; }
+
+    const btn = document.getElementById('btn-enroll');
+    btn.disabled = true;
+    btn.textContent = '采集中，请面向摄像头...';
+    document.getElementById('progress-bar').style.display = 'flex';
+
+    fetch('/face/enroll', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({family_member_id: parseInt(memberId)})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('progress-value').style.width = '100%';
+            document.getElementById('progress-value').textContent = '完成';
+            document.getElementById('enroll-message').innerHTML =
+                '<div class="alert alert-success">录入成功: ' + data.name + ' (' + data.frames + '帧)</div>';
+            setTimeout(() => window.location.href = '/face/status', 2000);
+        } else {
+            document.getElementById('enroll-message').innerHTML =
+                '<div class="alert alert-danger">' + data.error + '</div>';
+            btn.disabled = false;
+            btn.textContent = '重新录入';
+            document.getElementById('progress-bar').style.display = 'none';
+        }
+    })
+    .catch(err => {
+        document.getElementById('enroll-message').innerHTML =
+            '<div class="alert alert-danger">请求失败: ' + err + '</div>';
+        btn.disabled = false;
+        btn.textContent = '重试';
+    });
+}
+</script>
+{% endblock %}

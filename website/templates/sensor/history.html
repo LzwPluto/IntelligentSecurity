@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}数据趋势{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h4><i class="bi bi-graph-up"></i> 历史数据趋势</h4>
+        <hr>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="sensor-type" id="type-temp" value="temperature" checked>
+            <label class="btn btn-outline-danger" for="type-temp"><i class="bi bi-thermometer-half"></i> 温度</label>
+            <input type="radio" class="btn-check" name="sensor-type" id="type-humidity" value="humidity">
+            <label class="btn btn-outline-primary" for="type-humidity"><i class="bi bi-droplet-half"></i> 湿度</label>
+            <input type="radio" class="btn-check" name="sensor-type" id="type-smoke" value="smoke">
+            <label class="btn btn-outline-warning" for="type-smoke"><i class="bi bi-cloud-haze2"></i> 烟雾</label>
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="time-range" id="range-1h" value="1h">
+            <label class="btn btn-outline-secondary" for="range-1h">1小时</label>
+            <input type="radio" class="btn-check" name="time-range" id="range-6h" value="6h">
+            <label class="btn btn-outline-secondary" for="range-6h">6小时</label>
+            <input type="radio" class="btn-check" name="time-range" id="range-24h" value="24h" checked>
+            <label class="btn btn-outline-secondary" for="range-24h">24小时</label>
+            <input type="radio" class="btn-check" name="time-range" id="range-7d" value="7d">
+            <label class="btn btn-outline-secondary" for="range-7d">7天</label>
+            <input type="radio" class="btn-check" name="time-range" id="range-30d" value="30d">
+            <label class="btn btn-outline-secondary" for="range-30d">30天</label>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div id="history-chart-scroll" style="overflow-x:auto; overflow-y:hidden;">
+                    <canvas id="historyChart" height="350"></canvas>
+                </div>
+                <div id="history-scroll-hint" class="text-center text-muted small mt-1" style="display:none;">
+                    <i class="bi bi-arrows-move"></i> 左右拖动查看更多数据
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Summary -->
+<div class="row g-4 mt-2">
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <small class="text-muted">当前值</small>
+                <h4 id="stat-current">--</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <small class="text-muted">平均值</small>
+                <h4 id="stat-avg">--</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <small class="text-muted">最大值</small>
+                <h4 id="stat-max">--</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <small class="text-muted">最小值</small>
+                <h4 id="stat-min">--</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const unitMap = {temperature: '℃', humidity: '%', smoke: 'ppm'};
+const colorMap = {temperature: 'rgb(220, 53, 69)', humidity: 'rgb(13, 110, 253)', smoke: 'rgb(255, 193, 7)'};
+const ppPerRange = {'1h': 8, '6h': 6, '24h': 4, '7d': 3, '30d': 2};
+let historyChart = null;
+
+function adjustHistoryWidth(range, dataCount) {
+    const wrapper = document.getElementById('history-chart-scroll');
+    const canvas = document.getElementById('historyChart');
+    const hint = document.getElementById('history-scroll-hint');
+    if (!wrapper || !canvas) return;
+
+    const parentWidth = wrapper.parentElement.clientWidth;
+    const pp = ppPerRange[range] || 4;
+    const minWidth = Math.max(dataCount * pp, parentWidth);
+
+    if (dataCount > 50) {
+        canvas.style.minWidth = minWidth + 'px';
+        wrapper.style.overflowX = 'auto';
+        wrapper.scrollLeft = wrapper.scrollWidth;
+        if (hint) hint.style.display = 'block';
+    } else {
+        canvas.style.minWidth = '';
+        wrapper.style.overflowX = 'hidden';
+        if (hint) hint.style.display = 'none';
+    }
+}
+
+async function loadHistory() {
+    const type = document.querySelector('input[name="sensor-type"]:checked').value;
+    const range = document.querySelector('input[name="time-range"]:checked').value;
+    const resp = await fetch(`/sensor/api/history?type=${type}&range=${range}`);
+    const json = await resp.json();
+    const data = json.data;
+    const unit = unitMap[type] || '';
+
+    // Update stats
+    if (data.length > 0) {
+        const values = data.map(d => d.value);
+        const current = values[values.length - 1];
+        const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+        const max = Math.max(...values).toFixed(1);
+        const min = Math.min(...values).toFixed(1);
+        document.getElementById('stat-current').textContent = current.toFixed(1) + unit;
+        document.getElementById('stat-avg').textContent = avg + unit;
+        document.getElementById('stat-max').textContent = max + unit;
+        document.getElementById('stat-min').textContent = min + unit;
+    }
+
+    // 格式化标签: 短时间段只显示时钟, 长时间段显示日期+时钟
+    const labels = data.map(d => {
+        if (range === '1h' || range === '6h') {
+            return d.timestamp.split(' ')[1] || d.timestamp;
+        }
+        const parts = d.timestamp.split(' ');
+        return parts[0].slice(5) + ' ' + (parts[1] || '').slice(0, 5);
+    });
+    const values = data.map(d => d.value);
+
+    if (historyChart) historyChart.destroy();
+
+    const ctx = document.getElementById('historyChart').getContext('2d');
+    historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: type + ' (' + unit + ')',
+                data: values,
+                borderColor: colorMap[type] || 'rgb(75, 192, 192)',
+                backgroundColor: (colorMap[type] || 'rgb(75, 192, 192)').replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                fill: true,
+                tension: 0.3,
+                pointRadius: data.length > 100 ? 0 : 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {display: false},
+            },
+            scales: {
+                x: {
+                    ticks: {maxTicksLimit: 15, maxRotation: 45, minRotation: 0},
+                    grid: {display: false}
+                }
+            }
+        }
+    });
+
+    adjustHistoryWidth(range, labels.length);
+}
+
+document.querySelectorAll('input[name="sensor-type"], input[name="time-range"]').forEach(el => {
+    el.addEventListener('change', loadHistory);
+});
+
+loadHistory();
+</script>
+{% endblock %}

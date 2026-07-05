@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}仪表盘{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4><i class="bi bi-speedometer2"></i> 实时监控仪表盘</h4>
+        <hr>
+    </div>
+</div>
+
+<!-- Connection Status Bar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex align-items-center gap-3" id="connection-bar">
+            <span class="badge rounded-pill bg-secondary" id="mqtt-status-badge">
+                <i class="bi bi-broadcast"></i> MQTT: 检测中...
+            </span>
+            <span class="badge rounded-pill bg-secondary" id="socketio-status-badge">
+                <i class="bi bi-hdd-network"></i> SocketIO: 检测中...
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Sensor Cards Row -->
+<div class="row g-4 mb-4">
+    <!-- Temperature Card -->
+    <div class="col-md-4">
+        <div class="card sensor-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="sensor-icon text-danger">
+                    <i class="bi bi-thermometer-half"></i>
+                </div>
+                <h6 class="card-subtitle mb-2 text-muted">温度</h6>
+                <h2 class="card-title mb-0" id="temp-value">-- ℃</h2>
+                <small class="text-muted" id="temp-time">等待数据...</small>
+                <div class="mt-2">
+                    <span class="badge bg-secondary" id="temp-status">正常</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Humidity Card -->
+    <div class="col-md-4">
+        <div class="card sensor-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="sensor-icon text-primary">
+                    <i class="bi bi-droplet-half"></i>
+                </div>
+                <h6 class="card-subtitle mb-2 text-muted">湿度</h6>
+                <h2 class="card-title mb-0" id="humidity-value">-- %</h2>
+                <small class="text-muted" id="humidity-time">等待数据...</small>
+                <div class="mt-2">
+                    <span class="badge bg-secondary" id="humidity-status">正常</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smoke Card -->
+    <div class="col-md-4">
+        <div class="card sensor-card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="sensor-icon text-warning">
+                    <i class="bi bi-cloud-haze2"></i>
+                </div>
+                <h6 class="card-subtitle mb-2 text-muted">烟雾浓度</h6>
+                <h2 class="card-title mb-0" id="smoke-value">-- ppm</h2>
+                <small class="text-muted" id="smoke-time">等待数据...</small>
+                <div class="mt-2">
+                    <span class="badge bg-secondary" id="smoke-status">正常</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts and Widgets Row -->
+<div class="row g-4 mb-4">
+    <!-- Mini Trend Chart -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-graph-up"></i> 实时数据趋势</h6>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary active" data-range="1h">1小时</button>
+                    <button class="btn btn-outline-primary" data-range="6h">6小时</button>
+                    <button class="btn btn-outline-primary" data-range="24h">24小时</button>
+                </div>
+            </div>
+            <div class="card-body" style="position:relative; padding-left:65px; padding-bottom:30px;">
+                <!-- 固定图例 -->
+                <div id="chart-legend" class="chart-legend">
+                    <span class="chart-legend-item"><span class="chart-legend-color" style="background:rgb(220,53,69)"></span> 温度</span>
+                    <span class="chart-legend-item"><span class="chart-legend-color" style="background:rgb(13,110,253)"></span> 湿度</span>
+                    <span class="chart-legend-item"><span class="chart-legend-color" style="background:rgb(255,193,7)"></span> 烟雾</span>
+                </div>
+                <!-- 固定Y轴标签 -->
+                <div id="y-axis-panel" class="y-axis-panel"></div>
+                <!-- 可滚动图表区域(仅图表线条滚动) -->
+                <div id="chart-scroll-wrapper" style="overflow-x:auto; overflow-y:hidden;">
+                    <canvas id="realtimeChart" height="200"></canvas>
+                </div>
+                <!-- 固定X轴标签 -->
+                <div id="x-axis-labels" class="x-axis-labels"></div>
+                <div id="chart-scroll-hint" class="text-center text-muted small mt-1" style="display:none;">
+                    <i class="bi bi-arrows-move"></i> 左右拖动查看更多数据
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weather Widget -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-cloud-sun"></i> 天气预报</h6>
+            </div>
+            <div class="card-body" id="weather-widget">
+                <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <p class="mt-2">加载天气数据...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Preview Row -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="bi bi-camera-video"></i> 摄像头预览</h6>
+                <a href="{{ url_for('camera.stream_page') }}" class="btn btn-sm btn-outline-primary">
+                    全屏查看 <i class="bi bi-arrows-fullscreen"></i>
+                </a>
+            </div>
+            <div class="card-body text-center">
+                <div id="camera-container" style="max-width: 640px; margin: 0 auto;">
+                    <img id="camera-preview" src="{{ url_for('camera.video_feed') }}"
+                         class="img-fluid rounded" alt="摄像头画面"
+                         onerror="this.style.display='none'; document.getElementById('camera-offline').style.display='block';">
+                    <div id="camera-offline" style="display: none;" class="py-5 text-muted">
+                        <i class="bi bi-camera-video-off" style="font-size: 3rem;"></i>
+                        <p class="mt-2">摄像头不可用</p>
+                        <small>可能正被人脸识别模块占用</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/weather.js') }}"></script>
+{% endblock %}
