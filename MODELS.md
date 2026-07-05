@@ -28,7 +28,23 @@
 
 ## 模型获取方式
 
-### 方式一：从原始模型转换（推荐）
+### 方式一：从 GitHub Releases 下载（推荐）
+
+将所有模型文件打包后上传至 GitHub Releases：
+
+```bash
+# 1. 在本地将模型文件整理到 models/ 目录
+# 2. 打包
+tar -czf models.tar.gz models/
+# 3. 在 GitHub 仓库页面 → Releases → Create a new release
+#    上传 models.tar.gz
+# 4. 用户在开发板上:
+wget https://github.com/LzwPluto/IntelligentSecurity/releases/download/v1.0/models.tar.gz
+tar -xzf models.tar.gz
+./deploy_models.sh models/
+```
+
+### 方式二：从原始模型转换
 
 项目提供了转换脚本：
 
@@ -44,10 +60,6 @@ python decoder2rknn.py --model decoder-en.onnx
 # 人脸 (RetinaFace / MobileFaceNet)
 # 参考 rknn-toolkit2 官方转换指南
 ```
-
-### 方式二：直接下载预转换模型
-
-（预转换模型下载链接待补充 — 可上传至 GitHub Releases 或网盘）
 
 ## 文件结构映射
 
